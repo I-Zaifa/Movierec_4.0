@@ -8,8 +8,8 @@ This project generates movie suggestions based on a list of titles provided by a
 3. The optional `movierec.visualize` module can be used to explore the processed data.
    
    ![Output](https://github.com/I-Zaifa/MovieRecommendation4000/blob/main/Visualized_Data.jpg)
-4. Liked movie features are averaged and compared to the rest of the catalog using Euclidean distance. Input titles are corrected with `fuzzywuzzy` to handle case differences or minor typos.
-5. Recommendations are served by a `MovieRecommender` class that preloads and scales the dataset.
+4. Liked movie features are averaged and compared to the rest of the catalog using a weighted cosine similarity. Input titles are corrected with `fuzzywuzzy` to handle case differences or minor typos.
+5. Recommendations are served by a `MovieRecommender` class that preloads and scales the dataset. Feature weights can optionally be overridden to tune the results.
 6. A GUI can be launched via `python -m movierec` or recommendations can be printed in the terminal with the `--movies` option.
    
    ![Tkinter output](https://github.com/I-Zaifa/MovieRecommendation4000/blob/main/Tkinter%20output.jpg)
@@ -37,4 +37,4 @@ python -m movierec --movies "The Matrix, Inception"
 
 ## Thoughts
 
-Future work could incorporate box‑office numbers and user reviews to help weight movie popularity. The current Euclidean distance approach remains lightweight and could still be replaced by a more sophisticated model in the future.
+Future work could incorporate box‑office numbers and user reviews to help weight movie popularity. The new weighted cosine approach is still lightweight but leaves room for experimenting with different similarity metrics or even neural embeddings in the future.
