@@ -1,58 +1,71 @@
+"""Utility for retrieving movie recommendations."""
+
 import pandas as pd
 from sklearn.preprocessing import StandardScaler
 from sklearn.metrics.pairwise import cosine_similarity
 from fuzzywuzzy import process
 
-# Function that gets recommendations and is imported in another file for use
-def get_recommendations(user_movies_list, top_n=30):
-    df_cleaned = pd.read_csv('Processed_Dataset.csv')
-    df = df_cleaned
-    features = [ 'MetaScore','Duration (minutes)', 'IMDb Rating', 'Year', 'Genre Value']
 
-    # Correct user movies list using fuzzy matching for case insensitivity or misspelling
+FEATURE_COLUMNS = [
+    "MetaScore",
+    "Duration (minutes)",
+    "IMDb Rating",
+    "Year",
+    "Genre Value",
+]
+
+
+def get_recommendations(user_movies_list, top_n=30):
+    """Return up to ``top_n`` recommended movie titles.
+
+    Parameters
+    ----------
+    user_movies_list : list[str]
+        Raw user input movie titles.
+    top_n : int, optional
+        Maximum number of recommendations, by default ``30``.
+
+    Returns
+    -------
+    list[str]
+        Recommended movie titles sorted by similarity.
+    """
+
+    df = pd.read_csv("Processed_Dataset.csv")
+
+    # Correct user movie titles using fuzzy matching
     corrected_user_movies_list = []
     for movie in user_movies_list:
-        match = process.extractOne(movie.lower(), df.iloc[:, 0].str.lower())
-        if match[1] >= 70: # Similarity between input and dataset tile is 70% atleast
-            corrected_user_movies_list.append(df.iloc[match[2], 0])  # Get the actual title from the DataFrame
-    
-    # Get unique corrected movie titles
+        match = process.extractOne(movie.lower(), df["Title"].str.lower())
+        if match and match[1] >= 70:
+            corrected_user_movies_list.append(df.iloc[match[2]]["Title"])
+
     corrected_user_movies_list = list(set(corrected_user_movies_list))
 
-    # Take user movies from the dataframe to get thier features
-    user_movies = df[df.iloc[:, 0].isin(corrected_user_movies_list)]
-    user_movie_features = user_movies[features]
-
+    # Scale entire feature matrix once for consistency
     scaler = StandardScaler()
-    user_movie_features_scaled = scaler.fit_transform(user_movie_features)
+    scaled_features = scaler.fit_transform(df[FEATURE_COLUMNS])
 
-    # Take all movies except those in user's list for recommendation
-    all_movies = df[~df.iloc[:, 0].isin(corrected_user_movies_list)]
-    all_movie_features = all_movies[features]
-    all_movie_features_scaled = scaler.transform(all_movie_features)
-
-    # Calculate similarity using Cosine Similarity
-    similarity_matrix = cosine_similarity(all_movie_features_scaled)
-
-    # Sort similar movies in descending order
-    similar_movies_indices = similarity_matrix.argsort(axis=1)[:, ::-1]
-
-    # Top movies added to a list
     recommended_movies = []
+
     for movie in corrected_user_movies_list:
-        movie_index = df[df.iloc[:, 0] == movie].index[0]
-        
-        for index in similar_movies_indices[movie_index]:
-            # Check if all features (except genre) are above 0.4 to avoid bad films
+        movie_index = df.index[df["Title"] == movie][0]
+
+        similarities = cosine_similarity(
+            scaled_features[[movie_index]], scaled_features
+        )[0]
+        sorted_indices = similarities.argsort()[::-1]
+
+        for idx in sorted_indices:
+            if idx == movie_index:
+                continue
             if all(
-                (all_movie_features.iloc[index][feature] >= 0.4)
-                if feature != 'Genre Value' else True  # Skip the genre value feature as 
-                for feature in features
+                df.iloc[idx][feature] >= 0.4 if feature != "Genre Value" else True
+                for feature in FEATURE_COLUMNS
             ):
-                recommended_movie_title = df.iloc[index, 0]
-                if (recommended_movie_title not in corrected_user_movies_list and
-                        recommended_movie_title not in recommended_movies):
-                    recommended_movies.append(recommended_movie_title)
+                title = df.iloc[idx]["Title"]
+                if title not in corrected_user_movies_list and title not in recommended_movies:
+                    recommended_movies.append(title)
                     if len(recommended_movies) >= top_n:
                         break
         if len(recommended_movies) >= top_n:
