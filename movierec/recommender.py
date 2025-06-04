@@ -5,7 +5,7 @@ from typing import Iterable, List
 
 import pandas as pd
 from sklearn.preprocessing import StandardScaler
-from sklearn.metrics.pairwise import cosine_similarity
+from sklearn.metrics import pairwise_distances
 from fuzzywuzzy import process
 
 
@@ -44,30 +44,28 @@ class MovieRecommender:
         """Return up to ``top_n`` recommended movie titles."""
 
         corrected = self._correct_titles(liked_titles)
+        if not corrected:
+            return []
+
+        indices = [self._df.index[self._df["Title"] == title][0] for title in corrected]
+        user_vector = self._scaled_features[indices].mean(axis=0, keepdims=True)
+
+        distances = pairwise_distances(user_vector, self._scaled_features, metric="euclidean")[0]
+        sorted_indices = distances.argsort()
+
         recommended: list[str] = []
-
-        for movie in corrected:
-            movie_index = self._df.index[self._df["Title"] == movie][0]
-
-            similarities = cosine_similarity(
-                self._scaled_features[[movie_index]], self._scaled_features
-            )[0]
-            sorted_indices = similarities.argsort()[::-1]
-
-            for idx in sorted_indices:
-                if idx == movie_index:
-                    continue
-                if all(
-                    self._df.iloc[idx][feature] >= 0.4 if feature != "Genre Value" else True
-                    for feature in FEATURE_COLUMNS
-                ):
-                    title = self._df.iloc[idx]["Title"]
-                    if title not in corrected and title not in recommended:
-                        recommended.append(title)
-                        if len(recommended) >= top_n:
-                            break
-            if len(recommended) >= top_n:
-                break
+        for idx in sorted_indices:
+            if idx in indices:
+                continue
+            if all(
+                self._df.iloc[idx][feature] >= 0.4 if feature != "Genre Value" else True
+                for feature in FEATURE_COLUMNS
+            ):
+                title = self._df.iloc[idx]["Title"]
+                if title not in recommended:
+                    recommended.append(title)
+                    if len(recommended) >= top_n:
+                        break
 
         return recommended
 
