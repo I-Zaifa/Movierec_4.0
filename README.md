@@ -1,16 +1,27 @@
-##### This project generates movie recommendations based off of user input of preferred movies and compares them across various features such as Genre, Duration, IMDb and MetaCritic Ratings, and year of release to get a preference of users tastes and recommend similar movies. 
+# Movie Recommendation Demo
 
-##### The dataset of IMDb is taken from https://www.kaggle.com/datasets/parthdande/imdb-dataset-2024-updated/data. It is upto date data as of July, 2024 and contains more than 4000 entries in total.
+This project generates movie suggestions based on a list of titles provided by a user. Movies are compared across genre, duration, IMDb and Metacritic ratings and year of release. The underlying dataset is sourced from [Kaggle](https://www.kaggle.com/datasets/parthdande/imdb-dataset-2024-updated/data) (July&nbsp;2024 snapshot) and contains over 4&nbsp;000 movies.
 
 ### Process:
-1. The datafiles are combined into one file using similarity of column names across all files
-2. Preprocessing is then done on the data. Missing or duplicate values are removed. Genre titles are converted to values (e.g: action=1, animation=2). The data is then normalized between values of 0 and 1 for ease of calculation and that data corresponds to one another when finding similarities.
-3. An optional file for data analysis and visualization is given to help better understand the data if it helps the creator.
+1. Multiple raw CSV files are merged into a single dataset.
+2. Preprocessing removes duplicates and missing values, maps genre names to numeric values and normalizes numerical columns.
+3. ``Data_analysis_and_visualization.py`` can be used to explore the processed data.
 ![Output](https://github.com/I-Zaifa/MovieRecommendation4000/blob/main/Visualized_Data.jpg) <sub> You can tell whether the IMDb scores align with Metacritic scores based off the ball size. Which genres are the most popular (such as action and family) and what duration lengths most movies fall into (could be used to predict if a user prefers short or long movies or if this preference does not matter). </sub>
-5. The processed file is saved with all the new values and the model is based off it. I used _cosine similarity_ for my similarity matching across various features of all the movies based on user input. User Input is processed with _fuzzywuzzy_ library to account for any corrections in case sensitivity or misspelling by the user. Movies with low scores are ignored.
-6. Using Tkinter I wrote a basic interactive window where a user can add movies and get recommendations and be saved from the powershell.
+5. Cosine similarity is used to match the user's liked movies to other titles. Input titles are corrected with ``fuzzywuzzy`` to handle case differences or minor typos.
+6. ``Main.py`` launches a small Tkinter GUI for adding movies and viewing recommendations.
 ![tkinter output](https://github.com/I-Zaifa/MovieRecommendation4000/blob/main/Tkinter%20output.jpg)
 
-### Thoughts:
-I would like to increase this projects scope in the future by having box office numbers and user reviews along with the number of votes which would allow for nlp sentiment analysis and also to judge the popularity of the movie which I currently cant. It will also help to discard irrelevant movies with very low votes even below the minimum average. 
-##### The cosine similarity metric was very limited in its use here and I would like to work with a different model, which would assign proper weights to the features, If I decide to expand this project.
+### Running the demo
+
+1. Install the required packages:
+
+   ```bash
+   pip install -r requirements.txt
+   ```
+
+2. Ensure ``Processed_Dataset.csv`` exists (run ``preprocessing.py`` if necessary).
+3. Execute ``python Main.py`` to launch the GUI.
+
+### Thoughts
+
+Future work could incorporate box‑office numbers and user reviews to help weight movie popularity. The cosine similarity approach is intentionally simple and could be replaced by a more sophisticated model in the future.

@@ -3,7 +3,8 @@ import numpy as np
 from sklearn.preprocessing import MinMaxScaler
 
 
-dataset = pd.read_csv('IMDb_combined_dataset.csv')
+DATASET_PATH = "IMDb_combined_dataset.csv"
+dataset = pd.read_csv(DATASET_PATH)
 
 
 ### Removing missing (some columns not having data) or duplicate values ###
@@ -20,7 +21,6 @@ df_cleaned = df_cleaned.dropna()
 unique_genres = df_cleaned['Genre'].unique()
 genre_mapping = {genre: idx + 1 for idx, genre in enumerate(unique_genres)}
 df_cleaned['Genre Value'] = df_cleaned['Genre'].map(genre_mapping)
-print(df_cleaned["Genre Value"])
 
 ### Normalizing the data (b/w 0 and 1) ###
 
@@ -34,3 +34,7 @@ df_cleaned[numerical_columns] = scaler.fit_transform(df_cleaned[numerical_column
 
 ### Save to a new file ###
 df_cleaned.to_csv("Processed_Dataset.csv", index=False)
+
+
+if __name__ == "__main__":
+    print("Processed dataset written to Processed_Dataset.csv")
