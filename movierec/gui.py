@@ -1,12 +1,15 @@
+from pathlib import Path
+
 import pandas as pd
 import tkinter as tk
 from tkinter import messagebox
-from the_model import get_recommendations  
+from .recommender import MovieRecommender
 
 
-df_cleaned = pd.read_csv('Processed_Dataset.csv')
-df_cleaned['Title'] = df_cleaned['Title'].astype(str)
-movie_titles = df_cleaned['Title'].tolist()
+DATA_PATH = Path(__file__).resolve().parent.parent / "Processed_Dataset.csv"
+df_cleaned = pd.read_csv(DATA_PATH)
+df_cleaned["Title"] = df_cleaned["Title"].astype(str)
+RECOMMENDER = MovieRecommender(DATA_PATH)
 
 # Functions for a interactive window (buttons and getting lists, etc)
 def get_user_input():
@@ -36,7 +39,7 @@ def get_user_input():
         if len(user_liked_movies) == 0:
             messagebox.showwarning("warning", "Please add at least two movies.")
         else:
-            recommendations = get_recommendations(user_liked_movies)
+            recommendations = RECOMMENDER.recommend(user_liked_movies)
             recommendations_window = tk.Toplevel(root)
             recommendations_window.title("Recommended Movies")
             recommendations_window.geometry("600x400")

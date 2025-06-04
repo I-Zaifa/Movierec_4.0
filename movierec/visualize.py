@@ -1,9 +1,11 @@
-import pandas as pd 
-import matplotlib.pyplot as plt 
+from pathlib import Path
+
+import pandas as pd
+import matplotlib.pyplot as plt
 import seaborn as sn
 
 # working with the processed data file
-DATASET_PATH = "Processed_Dataset.csv"
+DATASET_PATH = Path(__file__).resolve().parent.parent / "Processed_Dataset.csv"
 dataset = pd.read_csv(DATASET_PATH)
 
 # Using imdb raitngs and duration to compare them agains each other for all the genres.
