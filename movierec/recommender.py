@@ -1,7 +1,7 @@
 """High level recommendation utilities."""
 
 from pathlib import Path
-from typing import Iterable, List
+from typing import Iterable, List, Mapping
 
 import pandas as pd
 from sklearn.preprocessing import StandardScaler
@@ -17,11 +17,24 @@ FEATURE_COLUMNS = [
     "Genre Value",
 ]
 
+# Default feature weights used for weighted similarity scoring.
+DEFAULT_FEATURE_WEIGHTS = {
+    "MetaScore": 0.8,
+    "Duration (minutes)": 0.3,
+    "IMDb Rating": 1.2,
+    "Year": 0.5,
+    "Genre Value": 0.5,
+}
+
 
 class MovieRecommender:
     """Provide movie recommendations based on liked titles."""
 
-    def __init__(self, dataset_path: Path | None = None) -> None:
+    def __init__(
+        self,
+        dataset_path: Path | None = None,
+        feature_weights: Mapping[str, float] | None = None,
+    ) -> None:
         self.dataset_path = (
             Path(dataset_path)
             if dataset_path is not None
@@ -30,7 +43,14 @@ class MovieRecommender:
         self._df = pd.read_csv(self.dataset_path)
         self._df["Title"] = self._df["Title"].astype(str)
         scaler = StandardScaler()
-        self._scaled_features = scaler.fit_transform(self._df[FEATURE_COLUMNS])
+        scaled = scaler.fit_transform(self._df[FEATURE_COLUMNS])
+
+        weights = [
+            (feature_weights or DEFAULT_FEATURE_WEIGHTS).get(col, 1.0)
+            for col in FEATURE_COLUMNS
+        ]
+        self._weights = pd.Series(weights, index=FEATURE_COLUMNS)
+        self._scaled_features = scaled * self._weights.values
 
     def _correct_titles(self, titles: Iterable[str]) -> list[str]:
         fixed = []
@@ -50,7 +70,11 @@ class MovieRecommender:
         indices = [self._df.index[self._df["Title"] == title][0] for title in corrected]
         user_vector = self._scaled_features[indices].mean(axis=0, keepdims=True)
 
-        distances = pairwise_distances(user_vector, self._scaled_features, metric="euclidean")[0]
+        # Using cosine distance on weighted, standardised features tends to
+        # surface more nuanced similarities than plain Euclidean distance.
+        distances = pairwise_distances(
+            user_vector, self._scaled_features, metric="cosine"
+        )[0]
         sorted_indices = distances.argsort()
 
         recommended: list[str] = []
@@ -70,8 +94,14 @@ class MovieRecommender:
         return recommended
 
 
-def get_recommendations(user_movies_list: Iterable[str], top_n: int = 30) -> List[str]:
+def get_recommendations(
+    user_movies_list: Iterable[str],
+    top_n: int = 30,
+    *,
+    feature_weights: Mapping[str, float] | None = None,
+) -> List[str]:
     """Backwards compatible wrapper around :class:`MovieRecommender`."""
 
-    return MovieRecommender().recommend(user_movies_list, top_n=top_n)
-
+    return MovieRecommender(feature_weights=feature_weights).recommend(
+        user_movies_list, top_n=top_n
+    )
